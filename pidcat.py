@@ -1,4 +1,4 @@
-#!/usr/bin/env -S python -u
+#!/usr/bin/env -S python3 -u
 
 '''
 Copyright 2009, The Android Open Source Project
@@ -63,22 +63,20 @@ if args.use_emulator:
 if args.current_app:
   system_dump_command = base_adb_command + ["shell", "dumpsys", "activity", "activities"]
   system_dump = subprocess.Popen(system_dump_command, stdout=PIPE, stderr=PIPE).communicate()[0]
-  running_package_name = re.search(".*TaskRecord.*A[= ]([^ ^}]*)", str(system_dump)).group(1)
+  running_package_name = re.search(".*TaskRecord.*A[= ]([^ ^}]*)", system_dump).group(1)
   package.append(running_package_name)
 
 if len(package) == 0:
   args.all = True
 
 # Store the names of packages for which to match all processes.
-catchall_package = list(filter(lambda package: package.find(":") == -1, package))
+catchall_package = filter(lambda package: package.find(":") == -1, package)
 # Store the name of processes to match exactly.
-named_processes = list(filter(lambda package: package.find(":") != -1, package))
+named_processes = filter(lambda package: package.find(":") != -1, package)
 # Convert default process names from <package>: (cli notation) to <package> (android notation) in the exact names match group.
 named_processes = map(lambda package: package if package.find(":") != len(package) - 1 else package[:-1], named_processes)
 
 header_size = args.tag_width + 1 + 3 + 1 # space, level, space
-
-stdout_isatty = sys.stdout.isatty()
 
 width = -1
 try:
@@ -99,7 +97,7 @@ def termcolor(fg=None, bg=None):
   return '\033[%sm' % ';'.join(codes) if codes else ''
 
 def colorize(message, fg=None, bg=None):
-  return termcolor(fg, bg) + message + RESET if stdout_isatty else message
+  return termcolor(fg, bg) + message + RESET
 
 def indent_wrap(message):
   if width == -1:
@@ -198,7 +196,7 @@ class FakeStdinProcess():
     return None
 
 if sys.stdin.isatty():
-  adb = subprocess.Popen(adb_command, stdin=PIPE, stdout=PIPE)
+  adb = subprocess.Popen(adb_command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 else:
   adb = FakeStdinProcess()
 pids = set()
@@ -359,4 +357,5 @@ while adb.poll() is None:
     message = matcher.sub(replace, message)
 
   linebuf += indent_wrap(message)
-  print(linebuf.encode('utf-8'))
+  print(linebuf)
+
